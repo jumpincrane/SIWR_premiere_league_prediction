@@ -1,52 +1,29 @@
-import pgmpy
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.models import BayesianModel
+from pgmpy.estimators import BayesianEstimator
 import csv
-
+import pandas as pd
 
 class ProbApp:
 
     def __init__(self):
+        # temp input
+        self.input = ["25/06/2021", "Liverpool", "Tottenham"]
+        self.result = None
         # variables
-        self.dates = []
-        self.home_teams = []
-        self.away_teams = []
-        self.ft_home_goals = []
-        self.ft_away_goals = []
-        self.ft_results_match = []
-        self.ht_home_goals = []
-        self.ht_away_goals = []
-        self.ht_results_match = []
-        self.home_shots = []
-        self.away_shots = []
-        self.home_target_shots = []
-        self.away_target_shots = []
-
-    def load_data(self):
-        with open('data.csv', newline='') as csv_file:
-            spam_reader = csv.reader(csv_file, quotechar='|')
-            next(spam_reader)  # skip first element
-            for row in spam_reader:
-                self.dates.append(row[0])
-                self.home_teams.append(row[1])
-                self.away_teams.append(row[2])
-                self.ft_home_goals.append(row[3])
-                self.ft_away_goals.append(row[4])
-                self.ft_results_match.append(row[5])
-                self.ht_home_goals.append(row[6])
-                self.ht_away_goals.append(row[7])
-                self.ht_results_match.append(row[8])
-                self.home_shots.append(row[9])
-                self.away_shots.append(row[10])
-                self.home_target_shots.append(row[11])
-                self.away_target_shots.append(row[12])
+        self.data = pd.read_csv('data.csv')
+        self.nodes = list(self.data.columns)
+        print(self.nodes)
 
     def prediction(self):
-        pass
+        model = BayesianModel([self.nodes])
+
+
 
 
 def main():
     predict_app = ProbApp()
-    predict_app.load_data()
-
+    predict_app.prediction()
 
 if __name__ == "__main__":
     main()
