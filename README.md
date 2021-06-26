@@ -1,1 +1,1 @@
-# SIwR_football_proj
+# Sztuczna Inteligencja w Robotyce - football projekt
