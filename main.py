@@ -1,22 +1,51 @@
+import math
 from pgmpy.factors.discrete import TabularCPD
 from pgmpy.models import BayesianModel
-import os
+from pgmpy.inference import VariableElimination
 import pandas as pd
 
 
 class ProbApp:
 
     def __init__(self):
-        # temp input
-        self.input = ["25/06/2021", "Liverpool", "Tottenham"]
-        self.result = None
-        # variables
+        # self.input_date = input()
+        # self.input_ht = input()
+        # self.input_at = input()
+        self.input_date = '02/01/2021'
+        self.input_ht = 'Southampton'
+        self.input_at = 'Fulham'
         self.data = pd.read_csv('data.csv')
+        # dict to store data for a single team
         self.teams = {}
 
     def prediction(self):
         self.calculate_team_strength()
+        # for team in self.teams:
+        #     print(team)
+        #     print(self.teams[team])
+        # train_number, train_data, test_data = self.split_data(ratio=0.1)
+
         model = BayesianModel()
+        model.add_edges_from([('HomeTeam', 'HST'), ('HST', 'FTHG'), ('AwayTeam', 'FTHG'), ('FTHG', 'FTR'),
+                              ('AwayTeam', 'AST'), ('AST', 'FTAG'), ('HomeTeam', 'FTAG'),
+                              ('FTAG', 'FTR')])
+        model.fit(self.data)
+        print(f'Home Team str:{self.teams[self.input_ht]} vs Away Team str:{self.teams[self.input_at]}')
+        infer = VariableElimination(model)
+        query = infer.query(variables=['FTR'],
+                                evidence={'HomeTeam': self.input_ht, 'AwayTeam': self.input_at})
+        print(query)
+
+    def test_results(self, model, test_data, train_number):
+        predicted = model.predict(test_data)
+        predicted_ftr = predicted.pop('FTR').values
+        cmp_ftr = self.data[train_number:].pop('FTR').values
+        num_correct = 0
+        for i in range(len(predicted_ftr)):
+            if predicted_ftr[i] == cmp_ftr[i]:
+                num_correct += 1
+
+        print(f'{int((num_correct / len(predicted_ftr)) * 100)}%')
 
     def calculate_team_strength(self):
         # get list of teams
@@ -59,12 +88,28 @@ class ProbApp:
                         team_str += 2
             team_stat[5] = matches
             team_stat[10] = team_str
+            for row in self.data.values:
+                print(row)
             self.teams[team] = team_stat
+
+    def split_data(self, ratio):
+        train_number = int(math.ceil(len(self.data) * ratio) - 1)
+
+        train_data = self.data[:train_number]
+        test_data = self.data[train_number:]
+        data2pop = ['FTHG', 'FTAG', 'FTR', 'HTHG', 'HTAG', 'HTR', 'HS', 'AS', 'HST', 'AST', 'HF',
+                    'AF', 'HC', 'AC', 'HY', 'AY', 'HR', 'AR', 'Date']
+
+        for element in data2pop:
+            test_data.pop(element)
+
+        return train_number, train_data, test_data
+
 
 def main():
     predict_app = ProbApp()
     predict_app.prediction()
-    print(predict_app.teams)
+
 
 if __name__ == "__main__":
     main()
