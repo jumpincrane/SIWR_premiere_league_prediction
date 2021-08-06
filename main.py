@@ -8,9 +8,9 @@ class ProbApp:
 
     def __init__(self):
         # storing inputs
-        self.input_date = input()
-        self.input_ht = input()
-        self.input_at = input()
+        # self.input_date = input()
+        # self.input_ht = input()
+        # self.input_at = input()
         self.data = pd.read_csv('data.csv')
         # dict to store data for a single team
         self.teams_str = {}
@@ -53,16 +53,11 @@ class ProbApp:
         print(f'{int((num_correct / len(predicted_ftr)) * 100)}%')
 
     def calculate_team_strength(self):
-        # get list of teams
-        teams = []
-        for row in self.data.values:
-            home_team = row[1]
-            away_team = row[2]
-            teams.append(home_team)
-            teams.append(away_team)
-        # removing duplicates
+        # get list of teams and removing duplicates
+        teams = list(self.data['HomeTeam'])
         teams = set(teams)
-        # group scores to a team
+
+        # calc team strength
         for team in teams:
             matches = 0
             team_str = 0
@@ -82,6 +77,7 @@ class ProbApp:
 
             self.teams_str[team] = team_str
 
+        # normalize strength to <0;1> and give them a value from [0, 1, 2] in a specific range
         max_str = max(self.teams_str.values())
         min_str = min(self.teams_str.values())
         for team in self.teams_str:
@@ -96,6 +92,7 @@ class ProbApp:
                 st = 0
             self.teams_str[team] = st
 
+        # calculate result based on str
         home_team_str = []
         away_team_str = []
         result_str = []
@@ -116,6 +113,8 @@ class ProbApp:
             result_str.append(temp_result)
             home_team_str.append(temp_htstr)
             away_team_str.append(temp_atstr)
+
+        # add columns to data
         self.data['HT_STR'] = home_team_str
         self.data['AT_STR'] = away_team_str
         self.data['STR_RESULT'] = result_str
