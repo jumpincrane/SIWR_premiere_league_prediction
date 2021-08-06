@@ -1,5 +1,4 @@
 import math
-from pgmpy.factors.discrete import TabularCPD
 from pgmpy.models import BayesianModel
 from pgmpy.inference import VariableElimination
 import pandas as pd
@@ -8,35 +7,41 @@ import pandas as pd
 class ProbApp:
 
     def __init__(self):
-        # self.input_date = input()
-        # self.input_ht = input()
-        # self.input_at = input()
-        self.input_date = '02/01/2021'
-        self.input_ht = 'Southampton'
-        self.input_at = 'Fulham'
+        # storing inputs
+        self.input_date = input()
+        self.input_ht = input()
+        self.input_at = input()
         self.data = pd.read_csv('data.csv')
         # dict to store data for a single team
-        self.teams = {}
+        self.teams_str = {}
 
     def prediction(self):
+        # calculating teams strength and predict results based on strength
         self.calculate_team_strength()
-        # for team in self.teams:
-        #     print(team)
-        #     print(self.teams[team])
-        # train_number, train_data, test_data = self.split_data(ratio=0.1)
 
+        # ================= MODEL =======================
         model = BayesianModel()
         model.add_edges_from([('HomeTeam', 'HST'), ('HST', 'FTHG'), ('AwayTeam', 'FTHG'), ('FTHG', 'FTR'),
-                              ('AwayTeam', 'AST'), ('AST', 'FTAG'), ('HomeTeam', 'FTAG'),
-                              ('FTAG', 'FTR')])
+                              ('AwayTeam', 'AST'), ('AST', 'FTAG'), ('HomeTeam', 'FTAG'), ('FTAG', 'FTR'),
+                              ('HT_STR', 'STR_RESULT'), ('AT_STR', 'STR_RESULT'), ('STR_RESULT', 'FTR')])
         model.fit(self.data)
-        print(f'Home Team str:{self.teams[self.input_ht]} vs Away Team str:{self.teams[self.input_at]}')
+        # ===============================================
+
+        # inference
         infer = VariableElimination(model)
-        query = infer.query(variables=['FTR'],
-                                evidence={'HomeTeam': self.input_ht, 'AwayTeam': self.input_at})
-        print(query)
+        query = infer.map_query(variables=['FTR'],
+                            evidence={'HomeTeam': self.input_ht, 'AwayTeam': self.input_at})
+
+        print(query['FTR'])
 
     def test_results(self, model, test_data, train_number):
+        """
+        Temporary function for testing results via model.predict()
+
+        model - input your bayesian model
+        test_data - input your splitted part of data for testing
+        train_number - the specific index where the data is splitted
+        """
         predicted = model.predict(test_data)
         predicted_ftr = predicted.pop('FTR').values
         cmp_ftr = self.data[train_number:].pop('FTR').values
@@ -59,40 +64,68 @@ class ProbApp:
         teams = set(teams)
         # group scores to a team
         for team in teams:
-            # FTHG, FTAG, FTHWINS, FTAWINS, FTDRAWS, MATCHES, HR, AR, HST, AST, TEAMSTR
-            team_stat = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             matches = 0
             team_str = 0
             for row in self.data.values:
                 if team == row[1]:
                     matches += 1
-                    team_stat[0] += row[3]
-                    team_stat[6] += row[19]
-                    team_stat[8] += row[11]
                     if 'H' == row[5]:
-                        team_stat[2] += 1
                         team_str += 3
                     elif 'D' == row[5]:
-                        team_stat[4] += 1
                         team_str += 1
                 elif team == row[2]:
                     matches += 1
-                    team_stat[1] += row[4]
-                    team_stat[7] += row[20]
-                    team_stat[9] += row[12]
                     if 'A' == row[5]:
-                        team_stat[3] += 1
                         team_str += 5
                     elif 'D' == row[5]:
-                        team_stat[4] += 1
                         team_str += 2
-            team_stat[5] = matches
-            team_stat[10] = team_str
-            for row in self.data.values:
-                print(row)
-            self.teams[team] = team_stat
+
+            self.teams_str[team] = team_str
+
+        max_str = max(self.teams_str.values())
+        min_str = min(self.teams_str.values())
+        for team in self.teams_str:
+            temp = self.teams_str[team]
+            temp = (temp - min_str) / (max_str - min_str)
+            st = 0
+            if temp >= 0.8:
+                st = 2
+            elif 0.8 > temp >= 0.25:
+                st = 1
+            elif 0.25 > temp:
+                st = 0
+            self.teams_str[team] = st
+
+        home_team_str = []
+        away_team_str = []
+        result_str = []
+        for row in self.data.values:
+            home_team = row[1]
+            away_team = row[2]
+
+            temp_htstr = self.teams_str[home_team]
+            temp_atstr = self.teams_str[away_team]
+            temp_result = 0
+            if temp_atstr == temp_htstr:
+                temp_result = 'D'
+            elif temp_atstr > temp_htstr:
+                temp_result = 'A'
+            elif temp_htstr > temp_atstr:
+                temp_result = 'H'
+
+            result_str.append(temp_result)
+            home_team_str.append(temp_htstr)
+            away_team_str.append(temp_atstr)
+        self.data['HT_STR'] = home_team_str
+        self.data['AT_STR'] = away_team_str
+        self.data['STR_RESULT'] = result_str
 
     def split_data(self, ratio):
+        """
+            Temporary function for splitting data
+
+            ratio - input how you want the data to be splitted f.e (80:20 = 0.8)
+        """
         train_number = int(math.ceil(len(self.data) * ratio) - 1)
 
         train_data = self.data[:train_number]
