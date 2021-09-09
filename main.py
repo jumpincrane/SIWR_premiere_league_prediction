@@ -8,9 +8,9 @@ class ProbApp:
 
     def __init__(self):
         # storing inputs
-        # self.input_date = input()
-        # self.input_ht = input()
-        # self.input_at = input()
+        self.input_date = input()
+        self.input_ht = input()
+        self.input_at = input()
         self.data = pd.read_csv('data.csv')
         # dict to store data for a single team
         self.teams_str = {}
@@ -30,7 +30,7 @@ class ProbApp:
         # inference
         infer = VariableElimination(model)
         query = infer.map_query(variables=['FTR'],
-                            evidence={'HomeTeam': self.input_ht, 'AwayTeam': self.input_at})
+                            evidence={'HomeTeam': self.input_ht, 'AwayTeam': self.input_at}, show_progress=False)
 
         print(query['FTR'])
 
