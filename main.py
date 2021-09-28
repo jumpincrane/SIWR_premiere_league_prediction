@@ -3,6 +3,19 @@ from pgmpy.models import BayesianModel
 from pgmpy.inference import VariableElimination
 import pandas as pd
 
+# TODO Jakość kodu (1/2)
+# TODO Brakuje dokładniejszego opisu metody w sprawozdaniu.
+
+# TODO Model i dobór parametrów (5/5)
+
+# TODO Skuteczność 0.482 (1.5/3)
+# TODO [0.56, 1.00] - 3.0
+# TODO [0.53, 0.56) - 2.5
+# TODO [0.50, 0.53) - 2.0
+# TODO [0.47, 0.50) - 1.5
+# TODO [0.44, 0.47) - 1.0
+# TODO [0.41, 0.44) - 0.5
+# TODO [0.00, 0.41) - 0.0
 
 class ProbApp:
 
